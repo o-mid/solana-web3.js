@@ -2705,6 +2705,41 @@ describe('Connection', function () {
     }
   });
 
+  it('sendAndConfirmRawTransaction reports a confirmation failure as a send error', async () => {
+    const connection = new Connection(url, 'confirmed');
+    const rawTransaction = new Uint8Array([1, 2, 3]);
+    const signature =
+      '1111111111111111111111111111111111111111111111111111111111111111';
+    const options = {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed' as const,
+      commitment: 'confirmed' as const,
+    };
+    const sendRawTransactionStub = stub(
+      connection,
+      'sendRawTransaction',
+    ).resolves(signature);
+    const confirmTransactionStub = stub(
+      connection,
+      'confirmTransaction',
+    ).resolves({
+      context: {slot: 0n},
+      value: {err: {InstructionError: [0, 'Custom']}},
+    } as {context: Context; value: SignatureResult});
+
+    try {
+      await expect(
+        sendAndConfirmRawTransaction(connection, rawTransaction, options),
+      ).to.be.rejectedWith(
+        SendTransactionError,
+        `Transaction ${signature} resulted in an error`,
+      );
+    } finally {
+      sendRawTransactionStub.restore();
+      confirmTransactionStub.restore();
+    }
+  });
+
   it('sendRawTransaction rejects malformed runtime input', async () => {
     const connection = new Connection(url, 'confirmed');
     const malformedRawTransaction = {
