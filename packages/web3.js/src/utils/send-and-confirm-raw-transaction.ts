@@ -78,6 +78,7 @@ export async function sendAndConfirmRawTransaction(
   const sendOptions = options && {
     skipPreflight: options.skipPreflight,
     preflightCommitment: options.preflightCommitment || options.commitment,
+    maxRetries: options.maxRetries,
     minContextSlot: options.minContextSlot,
   };
 

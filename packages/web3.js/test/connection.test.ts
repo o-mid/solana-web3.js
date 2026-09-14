@@ -2454,6 +2454,7 @@ describe('Connection', function () {
       expect(sendRawTransactionStub.firstCall.args[1]).to.deep.equal({
         skipPreflight: true,
         preflightCommitment: 'processed',
+        maxRetries: undefined,
         minContextSlot: 7n,
       });
       expect(confirmTransactionStub).to.have.been.calledOnceWithExactly(
@@ -2501,12 +2502,62 @@ describe('Connection', function () {
       expect(sendRawTransactionStub.firstCall.args[1]).to.deep.equal({
         skipPreflight: false,
         preflightCommitment: 'confirmed',
+        maxRetries: undefined,
         minContextSlot: 9n,
       });
       expect(confirmTransactionStub).to.have.been.calledOnceWithExactly(
         signature,
         'finalized',
       );
+    } finally {
+      sendRawTransactionStub.restore();
+      confirmTransactionStub.restore();
+    }
+  });
+
+  it('sendAndConfirmRawTransaction forwards maxRetries', async () => {
+    const connection = new Connection(url, 'confirmed');
+    const rawTransaction = new Uint8Array([1, 2, 3]);
+    const signature =
+      '1111111111111111111111111111111111111111111111111111111111111111';
+    const confirmationStrategy = {
+      signature,
+      blockhash: blockhash('EkSnNWidA2rMT4wAhyLQ6UxJ2yR6b6bJ7hVn6XK7rxJQ'),
+      lastValidBlockHeight: 123,
+    };
+    const options = {
+      skipPreflight: true,
+      preflightCommitment: 'processed' as const,
+      commitment: 'confirmed' as const,
+      maxRetries: 7n,
+      minContextSlot: 7n,
+    };
+    const sendRawTransactionStub = stub(
+      connection,
+      'sendRawTransaction',
+    ).resolves(signature);
+    const confirmTransactionStub = stub(
+      connection,
+      'confirmTransaction',
+    ).resolves({
+      context: {slot: 0n},
+      value: {err: null},
+    } as {context: Context; value: SignatureResult});
+
+    try {
+      await sendAndConfirmRawTransaction(
+        connection,
+        rawTransaction,
+        confirmationStrategy,
+        options,
+      );
+
+      expect(sendRawTransactionStub.firstCall.args[1]).to.deep.equal({
+        skipPreflight: true,
+        preflightCommitment: 'processed',
+        maxRetries: 7n,
+        minContextSlot: 7n,
+      });
     } finally {
       sendRawTransactionStub.restore();
       confirmTransactionStub.restore();
