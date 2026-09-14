@@ -198,6 +198,37 @@ it('prefers wallet submission over signing even when the wallet can do both', as
   expect(sendRawTransaction).not.toHaveBeenCalled();
 });
 
+it('co-signs a versioned transaction with extra transaction signers', async () => {
+  const {owner, transaction} = await signingWallet();
+  const versioned = new VersionedTransaction(
+    new TransactionMessage({
+      instructions: transaction.instructions,
+      payerKey: transaction.feePayer!,
+      recentBlockhash: transaction.recentBlockhash as Blockhash,
+    }).compileToV0Message(),
+  );
+  const extra = {
+    address: transaction.feePayer!.toBase58(),
+    signTransactions: vi.fn(async () => [{}]),
+  };
+  const sign = vi
+    .spyOn(VersionedTransaction.prototype, 'sign')
+    .mockResolvedValue();
+  const sendRawTransaction = vi.fn(
+    async () => getBase58Decoder().decode(SIGNATURE) as string,
+  );
+  try {
+    await owner.sendTransaction(
+      versioned,
+      {sendRawTransaction} as unknown as Connection,
+      {signers: [extra as never]},
+    );
+    expect(sign).toHaveBeenCalledExactlyOnceWith([extra]);
+  } finally {
+    sign.mockRestore();
+  }
+});
+
 it('submits wallet-signed bytes through the supplied connection otherwise', async () => {
   const {owner, transaction, signTransaction, onError} = await signingWallet();
   transaction.addSignature(transaction.feePayer!, SIGNATURE);

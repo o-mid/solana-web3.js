@@ -417,16 +417,16 @@ export function createWalletController({
       }
       if (signers?.length) {
         if (isVersionedTransaction(transaction)) {
-          const messageSigners = signers.filter(
-            (extra): extra is Extract<Signer, {signMessages: unknown}> =>
-              'signMessages' in extra,
+          const transactionSigners = signers.filter(
+            (extra): extra is Extract<Signer, {signTransactions: unknown}> =>
+              'signTransactions' in extra,
           );
-          if (messageSigners.length !== signers.length) {
+          if (transactionSigners.length !== signers.length) {
             throw new Error(
-              'Every additional signer for a versioned transaction must implement signMessages.',
+              'Every additional signer for a versioned transaction must implement signTransactions.',
             );
           }
-          await transaction.sign(messageSigners);
+          await transaction.sign(transactionSigners);
         } else {
           await transaction.partialSign(...signers);
         }
