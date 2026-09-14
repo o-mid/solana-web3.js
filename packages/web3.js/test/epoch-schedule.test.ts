@@ -48,4 +48,32 @@ describe('EpochSchedule', () => {
       firstNormalSlot + 3n * slotsPerEpoch - 1n,
     );
   });
+
+  it('keeps warmup conversion correct past the signed 32-bit boundary', () => {
+    const epochSchedule = new EpochSchedule(
+      4294967296n,
+      0n,
+      true,
+      27n,
+      4294967264n,
+    );
+
+    expect(epochSchedule.getEpochAndSlotIndex(2147483616n)).to.be.eql([
+      26n,
+      0n,
+    ]);
+  });
+
+  it('keeps warmup conversion correct past 2^64', () => {
+    const slot = (1n << 64n) - 32n;
+    const epochSchedule = new EpochSchedule(
+      1n << 66n,
+      0n,
+      true,
+      80n,
+      1n << 66n,
+    );
+
+    expect(epochSchedule.getEpochAndSlotIndex(slot)).to.be.eql([59n, 0n]);
+  });
 });

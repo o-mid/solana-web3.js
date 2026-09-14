@@ -20,6 +20,7 @@ function nextPowerOfTwo(n: bigint) {
   n |= n >> 8n;
   n |= n >> 16n;
   n |= n >> 32n;
+  n |= n >> 64n;
   return n + 1n;
 }
 
