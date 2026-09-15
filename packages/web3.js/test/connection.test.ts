@@ -2724,7 +2724,7 @@ describe('Connection', function () {
       'confirmTransaction',
     ).resolves({
       context: {slot: 0n},
-      value: {err: {InstructionError: [0, 'Custom']}},
+      value: {err: {InstructionError: [0, {Custom: 1}]}},
     } as {context: Context; value: SignatureResult});
 
     try {
