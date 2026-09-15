@@ -2,6 +2,7 @@ import {
   createClient,
   getBase58Decoder,
   isSolanaError,
+  isTransactionPartialSigner,
   signatureBytes,
   SOLANA_ERROR__WALLET__NOT_CONNECTED,
 } from '@solana/kit';
@@ -17,7 +18,6 @@ import {getWalletAccountForUiWalletAccount} from '@wallet-standard/ui-registry';
 import {
   PublicKey,
   type Connection,
-  type Signer,
   type Transaction,
   type VersionedTransaction,
 } from '@solana/web3.js';
@@ -417,10 +417,7 @@ export function createWalletController({
       }
       if (signers?.length) {
         if (isVersionedTransaction(transaction)) {
-          const transactionSigners = signers.filter(
-            (extra): extra is Extract<Signer, {signTransactions: unknown}> =>
-              'signTransactions' in extra,
-          );
+          const transactionSigners = signers.filter(isTransactionPartialSigner);
           if (transactionSigners.length !== signers.length) {
             throw new Error(
               'Every additional signer for a versioned transaction must implement signTransactions.',
